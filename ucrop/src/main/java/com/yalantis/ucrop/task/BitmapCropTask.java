@@ -103,9 +103,9 @@ public class BitmapCropTask extends AsyncTask<Void, Void, Throwable> {
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(mImageInputPath, options);
 
-        boolean swapSides = mExifInfo.getExifDegrees() == 90 || mExifInfo.getExifDegrees() == 270;
-        float scaleX = (swapSides ? options.outHeight : options.outWidth) / (float) mViewBitmap.getWidth();
-        float scaleY = (swapSides ? options.outWidth : options.outHeight) / (float) mViewBitmap.getHeight();
+        //boolean swapSides = mExifInfo.getExifDegrees() == 90 || mExifInfo.getExifDegrees() == 270;
+        float scaleX = (false ? options.outHeight : options.outWidth) / (float) mViewBitmap.getWidth();
+        float scaleY = (false ? options.outWidth : options.outHeight) / (float) mViewBitmap.getHeight();
 
         float resizeScale = Math.min(scaleX, scaleY);
 
@@ -129,7 +129,7 @@ public class BitmapCropTask extends AsyncTask<Void, Void, Throwable> {
     }
 
     private boolean crop(float resizeScale) throws IOException {
-        ExifInterface originalExif = new ExifInterface(mImageInputPath);
+        //ExifInterface originalExif = new ExifInterface(mImageInputPath);
 
         cropOffsetX = Math.round((mCropRect.left - mCurrentImageRect.left) / mCurrentScale);
         cropOffsetY = Math.round((mCropRect.top - mCurrentImageRect.top) / mCurrentScale);
@@ -140,14 +140,16 @@ public class BitmapCropTask extends AsyncTask<Void, Void, Throwable> {
         Log.i(TAG, "Should crop: " + shouldCrop);
 
         if (shouldCrop) {
-            boolean cropped = cropCImg(mImageInputPath, mImageOutputPath,
+           /* boolean cropped = cropCImg(mImageInputPath, mImageOutputPath,
                     cropOffsetX, cropOffsetY, mCroppedImageWidth, mCroppedImageHeight,
                     mCurrentAngle, resizeScale, mCompressFormat.ordinal(), mCompressQuality,
                     mExifInfo.getExifDegrees(), mExifInfo.getExifTranslation());
             if (cropped && mCompressFormat.equals(Bitmap.CompressFormat.JPEG)) {
                 ImageHeaderParser.copyExif(originalExif, mCroppedImageWidth, mCroppedImageHeight, mImageOutputPath);
-            }
-            return cropped;
+            }*/
+            //return cropped;
+            return true;
+
         } else {
             FileUtils.copyFile(mImageInputPath, mImageOutputPath);
             return false;
@@ -185,8 +187,8 @@ public class BitmapCropTask extends AsyncTask<Void, Void, Throwable> {
     protected void onPostExecute(@Nullable Throwable t) {
         if (mCropCallback != null) {
             if (t == null) {
-                Uri uri = Uri.fromFile(new File(mImageOutputPath));
-                mCropCallback.onBitmapCropped(uri, cropOffsetX, cropOffsetY, mCroppedImageWidth, mCroppedImageHeight);
+                Uri uri = Uri.fromFile(new File(""));
+                mCropCallback.onBitmapCropped(uri, cropOffsetX, cropOffsetY, mCroppedImageWidth, mCroppedImageHeight, mCropRect, mCurrentImageRect, mCurrentAngle);
             } else {
                 mCropCallback.onCropFailure(t);
             }
