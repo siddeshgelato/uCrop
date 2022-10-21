@@ -10,9 +10,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.Base64;
 
 import com.yalantis.ucrop.model.AspectRatio;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -35,16 +37,22 @@ public class UCrop {
     public static final int RESULT_ERROR = 96;
     public static final int MIN_SIZE = 10;
 
-    private static final String EXTRA_PREFIX = BuildConfig.APPLICATION_ID;
+    private static final String EXTRA_PREFIX = "PRE";
 
     public static final String EXTRA_INPUT_URI = EXTRA_PREFIX + ".InputUri";
     public static final String EXTRA_OUTPUT_URI = EXTRA_PREFIX + ".OutputUri";
+    public static final String EXTRA_SOURCE_BITMAP = EXTRA_PREFIX + ".SourceBitmap";
     public static final String EXTRA_OUTPUT_CROP_ASPECT_RATIO = EXTRA_PREFIX + ".CropAspectRatio";
     public static final String EXTRA_OUTPUT_IMAGE_WIDTH = EXTRA_PREFIX + ".ImageWidth";
     public static final String EXTRA_OUTPUT_IMAGE_HEIGHT = EXTRA_PREFIX + ".ImageHeight";
     public static final String EXTRA_OUTPUT_OFFSET_X = EXTRA_PREFIX + ".OffsetX";
     public static final String EXTRA_OUTPUT_OFFSET_Y = EXTRA_PREFIX + ".OffsetY";
     public static final String EXTRA_ERROR = EXTRA_PREFIX + ".Error";
+    public static final String EXTRA_CROP_RECT = EXTRA_PREFIX + ".CropRect";
+    public static final String EXTRA_IMAGE_RECT = EXTRA_PREFIX + ".ImageRect";
+    public static final String EXTRA_ANGLE = EXTRA_PREFIX + "EXTRA_ANGLE";
+
+
 
     public static final String EXTRA_ASPECT_RATIO_X = EXTRA_PREFIX + ".AspectRatioX";
     public static final String EXTRA_ASPECT_RATIO_Y = EXTRA_PREFIX + ".AspectRatioY";
@@ -65,11 +73,28 @@ public class UCrop {
         return new UCrop(source, destination);
     }
 
+    public static UCrop of(@NonNull Bitmap source) {
+        return new UCrop(source);
+    }
+
     private UCrop(@NonNull Uri source, @NonNull Uri destination) {
         mCropIntent = new Intent();
         mCropOptionsBundle = new Bundle();
         mCropOptionsBundle.putParcelable(EXTRA_INPUT_URI, source);
         mCropOptionsBundle.putParcelable(EXTRA_OUTPUT_URI, destination);
+    }
+
+    private UCrop(@NonNull Bitmap bitmap) {
+        mCropIntent = new Intent();
+        mCropOptionsBundle = new Bundle();
+        mCropOptionsBundle.putString(EXTRA_SOURCE_BITMAP, getBitmapString(bitmap));
+    }
+
+    private String getBitmapString(Bitmap bitmap) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+        byte[] byteArray = byteArrayOutputStream .toByteArray();
+        return Base64.encodeToString(byteArray, Base64.DEFAULT);
     }
 
     /**
@@ -314,7 +339,7 @@ public class UCrop {
         }
 
         /**
-         * Set one of {@link android.graphics.Bitmap.CompressFormat} that will be used to save resulting Bitmap.
+         * Set one of {@link Bitmap.CompressFormat} that will be used to save resulting Bitmap.
          */
         public void setCompressionFormat(@NonNull Bitmap.CompressFormat format) {
             mOptionBundle.putString(EXTRA_COMPRESSION_FORMAT_NAME, format.name());

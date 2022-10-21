@@ -3,10 +3,13 @@ package com.yalantis.ucrop;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -180,6 +183,7 @@ public class UCropFragment extends Fragment {
     private void setImageData(@NonNull Bundle bundle) {
         Uri inputUri = bundle.getParcelable(UCrop.EXTRA_INPUT_URI);
         Uri outputUri = bundle.getParcelable(UCrop.EXTRA_OUTPUT_URI);
+        String bitmapString = bundle.getString(UCrop.EXTRA_SOURCE_BITMAP);
         processOptions(bundle);
 
         if (inputUri != null && outputUri != null) {
@@ -188,13 +192,23 @@ public class UCropFragment extends Fragment {
             } catch (Exception e) {
                 callback.onCropFinish(getError(e));
             }
+        }
+        else if(bitmapString != null && !bitmapString.isEmpty()) {
+            Bitmap bitmap = getBitmapFromString(bitmapString);
+            mGestureCropImageView.setImageBitmap(bitmap);
+
         } else {
             callback.onCropFinish(getError(new NullPointerException(getString(R.string.ucrop_error_input_data_is_absent))));
         }
     }
 
+    private Bitmap getBitmapFromString(String bitmapString) {
+        byte[] decodedString = Base64.decode(bitmapString, Base64.DEFAULT);
+        return BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+    }
+
     /**
-     * This method extracts {@link com.yalantis.ucrop.UCrop.Options #optionsBundle} from incoming bundle
+     * This method extracts {@link UCrop.Options #optionsBundle} from incoming bundle
      * and setups fragment, {@link OverlayView} and {@link CropImageView} properly.
      */
     @SuppressWarnings("deprecation")
@@ -303,9 +317,6 @@ public class UCropFragment extends Fragment {
 
     };
 
-    /**
-     * Use {@link #mActiveWidgetColor} for color filter
-     */
     private void setupStatesWrapper(View view) {
         ImageView stateScaleImageView = view.findViewById(R.id.image_view_state_scale);
         ImageView stateRotateImageView = view.findViewById(R.id.image_view_state_rotate);
@@ -550,8 +561,8 @@ public class UCropFragment extends Fragment {
         mGestureCropImageView.cropAndSaveImage(mCompressFormat, mCompressQuality, new BitmapCropCallback() {
 
             @Override
-            public void onBitmapCropped(@NonNull Uri resultUri, int offsetX, int offsetY, int imageWidth, int imageHeight) {
-                callback.onCropFinish(getResult(resultUri, mGestureCropImageView.getTargetAspectRatio(), offsetX, offsetY, imageWidth, imageHeight));
+            public void onBitmapCropped(@NonNull Uri resultUri, int offsetX, int offsetY, int imageWidth, int imageHeight, RectF mCropRect, RectF mCurrentImageRect, float mCurrentAngle) {
+                callback.onCropFinish(getResult(resultUri, mGestureCropImageView.getTargetAspectRatio(), offsetX, offsetY, imageWidth, imageHeight, mCropRect, mCurrentImageRect, mCurrentAngle));
                 callback.loadingProgress(false);
             }
 
@@ -562,7 +573,7 @@ public class UCropFragment extends Fragment {
         });
     }
 
-    protected UCropResult getResult(Uri uri, float resultAspectRatio, int offsetX, int offsetY, int imageWidth, int imageHeight) {
+    protected UCropResult getResult(Uri uri, float resultAspectRatio, int offsetX, int offsetY, int imageWidth, int imageHeight, RectF mCropRect, RectF mCurrentImageRect, float mCurrentAngle) {
         return new UCropResult(RESULT_OK, new Intent()
                 .putExtra(UCrop.EXTRA_OUTPUT_URI, uri)
                 .putExtra(UCrop.EXTRA_OUTPUT_CROP_ASPECT_RATIO, resultAspectRatio)
@@ -570,6 +581,10 @@ public class UCropFragment extends Fragment {
                 .putExtra(UCrop.EXTRA_OUTPUT_IMAGE_HEIGHT, imageHeight)
                 .putExtra(UCrop.EXTRA_OUTPUT_OFFSET_X, offsetX)
                 .putExtra(UCrop.EXTRA_OUTPUT_OFFSET_Y, offsetY)
+                .putExtra(UCrop.EXTRA_CROP_RECT, mCropRect)
+                .putExtra(UCrop.EXTRA_IMAGE_RECT, mCurrentImageRect)
+                .putExtra(UCrop.EXTRA_ANGLE, mCurrentAngle)
+
         );
     }
 
